@@ -2,16 +2,13 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-// ADD THIS: Root route for Kubernetes Health Checks
+// This fixes the "Unhealthy" probe error
 app.get('/', (req, res) => {
-  res.status(200).send("Backend is healthy!");
+  res.status(200).send("OK");
 });
 
-// Your existing API route
 app.get('/api', (req, res) => {
-  res.json({ message: "Hello from the EKS Backend!", status: "Healthy" });
+  res.json({ message: "Backend is Live!" });
 });
 
-app.listen(port, () => {
-  console.log(`Backend listening at http://localhost:${port}`);
-});
+app.listen(port, () => console.log(`Listening on ${port}`));
