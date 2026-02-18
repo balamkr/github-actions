@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: blamkr/lab-frontend:1.0
+          image: blamkr/lab-frontend:latest
           ports:
             - containerPort: 80
           readinessProbe:
