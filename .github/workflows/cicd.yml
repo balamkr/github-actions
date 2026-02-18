@@ -75,9 +75,9 @@ jobs:
       - name: Apply K8s Manifests
         run: |
           # Use relative paths (root of repo)
-          kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-service.yaml
+         # kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-service.yaml
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-service.yaml
-          kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-deployment.yaml
+         # kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-deployment.yaml
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-deployment.yaml
 
           # Apply Ingress if it exists
@@ -88,12 +88,12 @@ jobs:
       - name: Update Deployment Images
         run: |
           TAG=${{ github.sha }}
-          kubectl -n "$K8S_NAMESPACE" set image deployment/backend  backend="${DOCKER_ORG}/lab-backend:${TAG}"
+         # kubectl -n "$K8S_NAMESPACE" set image deployment/backend  backend="${DOCKER_ORG}/lab-backend:${TAG}"
           kubectl -n "$K8S_NAMESPACE" set image deployment/frontend frontend="${DOCKER_ORG}/lab-frontend:${TAG}"
 
       - name: Wait for Rollout
         run: |
-          kubectl -n "$K8S_NAMESPACE" rollout status deploy/backend  --timeout=120s
+         # kubectl -n "$K8S_NAMESPACE" rollout status deploy/backend  --timeout=120s
           kubectl -n "$K8S_NAMESPACE" rollout status deploy/frontend --timeout=120s
 
      # - name: Smoke Test
