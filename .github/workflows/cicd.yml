@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION:        ${{ secrets.AWS_REGION }}
-  EKS_CLUSTER_NAME:  ${{ secrets.EKS_CLUSTER_NAME }}
-  K8S_NAMESPACE:     ${{ secrets.K8S_NAMESPACE }}
-  DOCKER_ORG:        ${{ secrets.DOCKER_ORG }}
+  AWS_REGION:       ${{ secrets.AWS_REGION }}
+  EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+  K8S_NAMESPACE:    ${{ secrets.K8S_NAMESPACE }}
+  DOCKER_ORG:       ${{ secrets.DOCKER_ORG }}
 
 jobs:
   build:
@@ -34,6 +34,15 @@ jobs:
             ${{ env.DOCKER_ORG }}/lab-frontend:${{ github.sha }}
             ${{ env.DOCKER_ORG }}/lab-frontend:latest
 
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.DOCKER_ORG }}/lab-backend:${{ github.sha }}
+            ${{ env.DOCKER_ORG }}/lab-backend:latest
+
   deploy:
     name: Deploy to EKS
     runs-on: ubuntu-latest
@@ -57,14 +66,21 @@ jobs:
 
       - name: Apply Manifests
         run: |
+          # Apply Frontend
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-service.yaml
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-deployment.yaml
+          # Apply Backend
+          kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-service.yaml
+          kubectl apply -n "$K8S_NAMESPACE" -f k8s/backend-deployment.yaml
+          # Apply Ingress/Routing
           [ -f k8s/ingress-traefik.yaml ] && kubectl apply -n "$K8S_NAMESPACE" -f k8s/ingress-traefik.yaml
 
       - name: Force Image Update
         run: |
           kubectl -n "$K8S_NAMESPACE" set image deployment/frontend frontend="${DOCKER_ORG}/lab-frontend:${{ github.sha }}"
+          kubectl -n "$K8S_NAMESPACE" set image deployment/backend backend="${DOCKER_ORG}/lab-backend:${{ github.sha }}"
 
       - name: Wait for Rollout
         run: |
           kubectl -n "$K8S_NAMESPACE" rollout status deploy/frontend --timeout=300s
+          kubectl -n "$K8S_NAMESPACE" rollout status deploy/backend --timeout=300s
