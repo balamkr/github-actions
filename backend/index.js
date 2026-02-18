@@ -1,8 +1,13 @@
-// Create this file inside ~/github-actions/ec2/backend/index.js
 const express = require('express');
 const app = express();
 const port = 3000;
 
+// ADD THIS: Root route for Kubernetes Health Checks
+app.get('/', (req, res) => {
+  res.status(200).send("Backend is healthy!");
+});
+
+// Your existing API route
 app.get('/api', (req, res) => {
   res.json({ message: "Hello from the EKS Backend!", status: "Healthy" });
 });
