@@ -2,9 +2,7 @@ name: CI/CD to EKS
 
 on:
   push:
-    branches:
-      - main
-      - feature-cicd
+    branches: [main, feature-cicd]
   workflow_dispatch:
 
 env:
@@ -12,11 +10,10 @@ env:
   EKS_CLUSTER_NAME:  ${{ secrets.EKS_CLUSTER_NAME }}
   K8S_NAMESPACE:     ${{ secrets.K8S_NAMESPACE }}
   DOCKER_ORG:        ${{ secrets.DOCKER_ORG }}
-  INGRESS_HOST:      ${{ secrets.INGRESS_HOST }}
 
 jobs:
   build:
-    name: Build & Push (frontend)
+    name: Build & Push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -55,22 +52,19 @@ jobs:
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
 
-      - name: Ensure Namespace Exists
+      - name: Ensure Namespace
         run: kubectl get ns "$K8S_NAMESPACE" || kubectl create ns "$K8S_NAMESPACE"
 
-      - name: Apply K8s Manifests
+      - name: Apply Manifests
         run: |
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-service.yaml
           kubectl apply -n "$K8S_NAMESPACE" -f k8s/frontend-deployment.yaml
-          if [ -f k8s/ingress-traefik.yaml ]; then
-            kubectl apply -n "$K8S_NAMESPACE" -f k8s/ingress-traefik.yaml
-          fi
+          [ -f k8s/ingress-traefik.yaml ] && kubectl apply -n "$K8S_NAMESPACE" -f k8s/ingress-traefik.yaml
 
-      - name: Update Deployment Image
+      - name: Force Image Update
         run: |
-          TAG=${{ github.sha }}
-          kubectl -n "$K8S_NAMESPACE" set image deployment/frontend frontend="${DOCKER_ORG}/lab-frontend:${TAG}"
+          kubectl -n "$K8S_NAMESPACE" set image deployment/frontend frontend="${DOCKER_ORG}/lab-frontend:${{ github.sha }}"
 
       - name: Wait for Rollout
         run: |
-          kubectl -n "$K8S_NAMESPACE" rollout status deploy/frontend --timeout=180s
+          kubectl -n "$K8S_NAMESPACE" rollout status deploy/frontend --timeout=300s
